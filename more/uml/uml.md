@@ -243,10 +243,12 @@ stop
 В диаграммах деятельности, если ваш алгоритм ощетинился точками выхода -- вы сами не понимаете, что нарисовали.
 
 Было
-![class diagram 4](./images/cd06.png)
+
+![class diagram было](./images/cd05.png)
 
 Стало
-![class diagram 4](./images/cd05.png)
+
+![class diagram стало](./images/cd06.png)
 
 
 ## Что почитать
