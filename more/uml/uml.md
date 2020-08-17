@@ -158,10 +158,10 @@ Traider o-- Item
 script -> Петя: 6 яблок, 2 груши
 script -> Миша: 3 яблока, 5 груш
 script -> Петя: take(3, 'apple')
-Петя -> script: apples
+Петя --> script: apples
 script -> Миша: give(apples)
 script -> Миша: take(2, 'pear')
-Миша -> script: pears
+Миша --> script: pears
 script -> Петя: give(pears)
 script -> Петя: getItems()
 script -> Миша: getItems()
@@ -181,7 +181,7 @@ API -> Atlant: GET /profile/id
 API -> Billing: PATCH /v2/subscriptions/id
 API -> Atlant: POST /flush
 API -> Atlant: GET /profile/id
-API -> User
+API --> User
 ```
 
 ![sequence diagram 2](./images/sd02.png)
