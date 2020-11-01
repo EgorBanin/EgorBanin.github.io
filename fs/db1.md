@@ -1,5 +1,3 @@
-! Черновик
-
 # Работа с базой данных
 
 Для работы с базами данных PHP предлагает несколько стандартных библиотек,
@@ -12,7 +10,6 @@
 > имели дело с библиотекой [mysql](https://www.php.net/manual/ru/book.mysql.php).
 > Обратите внимание, что это расширение [устарело](https://www.php.net/manual/ru/intro.mysql.php)!
 
-
 Из-за плохого понимания принципов взаимодействия приложения и базы данных,
 начинающие программисты часто пишут довольно уродливый и уязвимый код. Ситуация усугубляется
 не самым интуитивным и удобным интерфейсом PDO. Попробуем разобраться, как же использовать
@@ -23,10 +20,10 @@ PDO правильно.
 Чтобы начать делать запросы в базу данных, к ней надо подключиться. Это как позвонить
 по телефону. Вы набираете номер друга, и только когда он поднимет трубку вы можете начать общаться.
 Очевидно, что нет смысла класть трубку, после каждой фразы и перезванивать ему снова, чтобы
-продолжить разговор. С базой данных точно так же. В большинстве случаев вам надо подключимться к ней один раз
-за всё время взаимодейтствия (выполнения вашего скрипта).
+продолжить разговор. С базой данных точно так же. В большинстве случаев вам надо подключиться
+к ней один раз за всё время взаимодейтствия (выполнения вашего скрипта).
 
-Кроме этого в вашем приложении могут быть сценарии, когда взаимодействие с базой данных не требуется.
+Кроме этого, в вашем приложении могут быть сценарии, когда взаимодействие с базой данных не требуется.
 Подключаться на всякий случай не очень-то умно. Было бы здорово подключаться к базе при
 первом обращении к ней, а при последующих использовать уже созданное подключение.
 Стандартная библиотека PDO ничего такого не предлагает. Этот код надо написать самому.
@@ -61,6 +58,7 @@ class MySQL {
         if ($this->pdo === null) {
             // подключаемся только один раз
             $this->pdo = new \PDO(...$this->pdoConstructorArgs);
+            $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
     
         return $this->pdo;
@@ -77,13 +75,14 @@ class MySQL {
 Вы могли заметить, что PDO предлагает общую абстракцию для работы с разными базами данных
 (не только MySQL). Но на самом деле, работа с разными базами довольно сильно отличается.
 Разные базы данных поддерживают разный синтаксис запросов, разные типы данных и разные
-возможности. Мы работаем именно с MySQL, поэтому назовём класс `MySQL`.
+возможности. Тут я рассказываю именно про MySQL, поэтому назвал класс `MySQL`.
 
 ## Доступ к подключению
 
-Чтобы воспользоваться преимуществами, которые даёт нам наша обёртка PDO, нам понаобится каким-то образом дать доступ
-к объекту класса `MySQL` во всех местах, где мы собираемся с базой работать
-(таких мест может быть довольно много). Самый простой способ сделать это -- создать глобальный (доступный отовсюду) объект.
+Чтобы воспользоваться преимуществами, которые даёт нам наша обёртка PDO,
+нам понаобится каким-то образом дать доступ к объекту класса `MySQL` во всех местах,
+где мы собираемся с базой работать (таких мест может быть довольно много).
+Самый простой способ сделать это -- создать глобальный (доступный отовсюду) объект.
 
 ```php
 <?php
@@ -105,7 +104,13 @@ foreach ($st as $row) {
 
 Исмпользование суперглобального массива `$GLOBALS` довольно спорное решение. Многие
 более опытные программисты могут осудить этот подход. Однако, если пользоваться им аккуратно,
-то на первых парах он отлично подходит для того, чтобы сделать наш объект доступным глобально. 
+то на первых парах он отлично подходит для того, чтобы сделать наш объект доступным глобально.
+
+> В некоторых учебниках по PHP вы можете встретить предложение реализовать глобальный объект
+> с помощью паттерна singleton. Обратите внимание, что такой подход мало чем отличается
+> от использования $GLOBALS. В любом случае, предпочитайте передавать объект
+> для работы с базой как аргумент (конструктора или конкретного метода),
+> а не полагаться на глобальный объект.
 
 
 ## Выполнение запросов
@@ -118,14 +123,17 @@ foreach ($st as $row) {
 
 Если ваши запросы в базу, формируются динамически из данных, которые отправляют
 пользователи (а именно так работает большинство веб-приожений), то очень важно
-понимать, что такое [SQL-инъекции](https://ru.wikipedia.org/wiki/Внедрение_SQL-кода) и как их избежать.
+понимать, что такое [SQL-инъекции](https://ru.wikipedia.org/wiki/Внедрение_SQL-кода)
+и как их избежать.
 
-Вот например типичный запрос новичка.
+Вот типичный запрос новичка:
 
 ```php
 <?php
 
-$st = $GLOBALS['db']->getPdo()->query("
+// ...
+
+$st = $pdo->query("
     select *
     from `test`
     where `id` = {$_GET['id']}
@@ -133,8 +141,8 @@ $st = $GLOBALS['db']->getPdo()->query("
 ```
 
 Проблема заключаеся в том, что в `$_GET['id']` не обязательно будет идентификатор. Данные
-`$_GET` (`$_POST`, `$_REQUEST`, `$_COOKIE` и другие) это данные из запроса, который отправил
-пользователь. А раз так, то там может быть почти всё что угодно. В том числе и что-нибудь такое
+`$_GET` (`$_POST`, `$_REQUEST`, `$_COOKIE` и другие) это данные, которые отправил
+пользователь. А раз так, то там может быть почти всё что угодно. В том числе и что-нибудь такое:
 
 ```
 http://mysite/index.php?id= 1 or 1 = 1 union select * from `users` 
@@ -154,7 +162,9 @@ SQL, то поймёте -- запрос изменится. Теперь усл
 ```php
 <?php
 
-$st = $GLOBALS['db']->getPdo()->prepare('
+// ...
+
+$st = $pdo->prepare('
     select *
     from `test`
     where `id` = :id
@@ -179,58 +189,42 @@ $st = $GLOBALS['db']->getPdo()->prepare($sql);
 // подставляем все переменные в запрос, указывая правильный тип
 $st->bindValue(':id', $id, \PDO::PARAM_INT);
 // выполняем запрос
-if ( ! $st->execute()) {
-    // обрабатываем ошибку
-    throw new \Exception('Не удалось выполнить запрос ' . $sql);
-}
+$st->execute();
 // получаем строки
 $rows = $st->fetchAll();
 ```
 
-Без комменариев и не относящегося к запросу кода получается минимум шесть строк. Шесть строк каздый раз,
-когда вы делаете запрос, -- никуда не годится. Давайте напишем простой метод и забудем про копипасту.
+Всё это надо писать всякий раз, когда вы делаете запрос в базу. Многословно и довольно утомительно.
+Можно написать функцию, которая выразит ваши намерения более явно.
 
 ```php
 <?php
 
 class MySQL {
     
+    private const TYPES_MAP = [
+        'string' => \PDO::PARAM_STR,
+        'integer' => \PDO::PARAM_INT,
+        'boolean' => \PDO::PARAM_BOOL,
+        'NULL' => \PDO::PARAM_NULL,
+    ];
+
     // ...
     
     public function query(string $sql, array $params = []): \PDOStatement {
         $pdo = $this->getPdo();
         $st = $pdo->prepare($sql);
         foreach ($params as $name => $value) {
-            switch (gettype($value)) {
-                case 'string':
-                    $type = \PDO::PARAM_STR;
-                    break;
-
-                case 'integer':
-                    $type = \PDO::PARAM_INT;
-                    break;
-
-                case 'boolean':
-                    $type = \PDO::PARAM_BOOL;
-                    break;
-    
-                case 'NULL':
-                    $type = \PDO::PARAM_NULL;
-                    break;
-
-                default:
-                    try {
-                        $value = (string) $value;
-                    } catch (\Throwable $e) {
-                        throw new \Exception('Недопустимый параметр ' . $name);
-                    }
-                    $type = \PDO::PARAM_STR;
+            if (isset(self::TYPES_MAP[gettype($value)])) {
+                $type = self::TYPES_MAP[gettype($value)];
+            } else {
+                $value = (string) $value;
+                $type = \PDO::PARAM_STR;
             }
+
             $st->bindValue($name, $value, $type);
         }
-        if ( ! $st->execute()) {
-            throw new \Exception('Не удалось выполнить запрос ' . $sql);
-        }
+        $st->execute();
 
         return $st;
     }
@@ -270,22 +264,22 @@ $rows = $st->fetchAll();
 
 class MySQLResult {
 
-    private $sql;
+    public string $sql;
     
-    private $params;
+    public array $params;
     
-    private $rows;
+    public array $rows;
     
-    private $affectedRows;
+    public string $affectedRows;
     
-    private $insertedId;
+    public ?string $insertedId;
     
     public function __construct(
         string $sql,
         array  $params,
         array $rows,
         int $affectedRows,
-        $insertedId
+        ?string $insertedId
     ) {
         $this->sql = $sql;
         $this->params = $params;
@@ -294,30 +288,10 @@ class MySQLResult {
         $this->insertedId = $insertedId;
     }
 
-    public  function getSql(): string {
-        return $this->sql;
-    }
-
-    public  function getParams(): array {
-        return $this->params;
-    }
-
-    public  function getRows(): array {
-        return $this->rows;
-    }
-
-    public  function getAffectedRows(): int {
-        return $this->affectedRows;
-    }
-
-    public  function getInsertedId(){
-        return $this->insertedId;
-    }
-
 }
 ```
 
-Я добавил `getSql` и `getParams`, они пригодятся для отладки, когда запрос вернул не то,
+Я добавил `sql` и `params`, они пригодятся для отладки, когда запрос вернул не то,
 что вы ожидали.
 
 ```php
@@ -327,22 +301,151 @@ class MySQL {
     
     // ...
     
-    public function query(string $sql, array $params): \PDOStatement {
+    public function query(string $sql, array $params): MySQLResult {
         // ...
         
+        try {
+            $lastInsertId = $pdo->lastInsertId();
+        } catch (\PDOException $e) {
+            /*
+                К сожалению поведение lastInsertId() зависит от того, какой запрос был вызван до этого.
+                Для не insert запросов функция выбросит исключение.
+
+                PDO не предоставляет возможности различать типы запросов,
+                но предполагает разные методы для них -- пример плохого дизайна PDO.
+            */
+            $lastInsertId = null;
+        }
+
         return new MySQLResult(
             $sql,
             $params,
-            $st->fetchAll(),
+            $st->fetchAll(\PDO::FETCH_ASSOC),
             $st->rowCount(),
-            $pdo->lastInsertId()
+            $lastInsertId
         );
     }
 }
 
 ```
 
-## Массивы в значениях переменных
+## Обработка ошибок
 
-TODO
+Если вы внимательно читали, то заметили строку
+`$this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);`.
+Она означает, что в случае ошибки (неправильно составлен запрос или разоравлось
+соединение с базой, или ещё что-то пошо не так) PDO выбросит исключение `\PDOException`.
+Это очень удобно, но лучше обработать такое исключение внутри класса-обёртки и выбросить своё.
 
+```php
+class MysqlException extends \Exception {
+    
+    const CODE_CONNECTION_ERROR = 1;
+    const CODE_QUERY_ERROR = 2;
+    const CODE_BINDING_ERROR = 3;
+    
+    public string $sql;
+
+    public array $params;
+    
+    public function __construct(
+        string $message,
+        int $code,
+        \Throwable $previous = null,
+        string $sql = '',
+        array $params = []
+    ) {
+        $this->sql = $sql;
+        $this->params = $params;
+        parent::__construct($message, $code, $previous);
+    }
+    
+}
+```
+
+Тогда подключение выглядит таким образом:
+
+```php
+try {
+    $this->pdo = new \PDO(...$this->pdoConstructorArgs);
+} catch (\PDOException $e) {
+    throw new MysqlException(
+        'Не удалось подключить к базе данных. ' . $e->getMessage(),
+        MysqlException::CODE_CONNECTION_ERROR,
+        $e
+    );
+}
+```
+
+А приведение к строке переданного параметра так:
+
+```php
+try {
+    $value = (string) $value;
+} catch (\Throwable $t) {
+    throw new MysqlException(
+        "Недопустимый параметр $name. " . $t->getMessage(),
+        MysqlException::CODE_BINDING_ERROR,
+        $t
+    );
+}
+```
+
+Исключение запроса может включать в себя SQL, вызвавший проблему.
+
+```php
+try {
+    $st->execute();
+} catch (\PDOException $e) {
+    throw new MysqlException(
+        "Не удалось выполнить зарос. " . $e->getMessage(),
+        MysqlException::CODE_QUERY_ERROR,
+        $e,
+        $sql,
+        $params
+    );
+}
+```
+
+## Итог
+
+В результате у нас получился заточенный на MySQL класс, с единственным методом выполнения запроса. И хотя интерфейс обёртки не такой гибкий, как PDO, зато он гораздо проще. А простота способствует большей выразительности кода и единому стилю.
+
+```php
+$pdo = new \PDO('mysql:host=localhost;port=3306;dbname=sakila', 'user', 'password');
+$this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare('
+    select *
+    from `posts`
+    where
+        `userId` = :userId
+        and `type` = :type
+        and `createdAt` >= :today
+');
+$st->bindValue(':userId', 123, \PDO::PARAM_INT);
+$st->bindValue(':type', 'article', \PDO::PARAM_STR);
+$st->bindValue(':today', new \DateTime('today')->format(\DateTime::ATOM), \PDO::PARAM_STR);
+$st->execute();
+$rows = $st->fetchAll(\PDO::FETCH_ASSOC);
+var_dump($rows);
+```
+
+```php
+$db = new MySQL('user', 'password', 'sakila');
+$result = $db->query('
+    select *
+    from `posts`
+    where
+        `userId` = :userId
+        and `type` = :type
+        and `createdAt` >= :today
+', [
+    ':userId' => 123,
+    ':type' => 'article',
+    ':today' => new \DateTime('today')->format(\DateTime::ATOM),
+]);
+var_dump($result->rows);
+```
+
+Кроме запроса в базу было бы полезно иметь кое-что ещё. Например, интерфейс управления транзакциями.
+Об этом в [следующей части](/fs/db2.md).
