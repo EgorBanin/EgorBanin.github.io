@@ -305,24 +305,24 @@ class MySQL {
         // ...
         
         try {
-            $lastInsertId = $pdo->lastInsertId();
+            $rows = $st->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
             /*
-                К сожалению поведение lastInsertId() зависит от того, какой запрос был вызван до этого.
-                Для не insert запросов функция выбросит исключение.
+                К сожалению поведение fetchAll() зависит от того, какой запрос был вызван до этого.
+                Для не select запросов функция выбросит исключение.
 
                 PDO не предоставляет возможности различать типы запросов,
                 но предполагает разные методы для них -- пример плохого дизайна PDO.
             */
-            $lastInsertId = null;
+            $rows = [];
         }
 
         return new MySQLResult(
             $sql,
             $params,
-            $st->fetchAll(\PDO::FETCH_ASSOC),
+            $rows,
             $st->rowCount(),
-            $lastInsertId
+            $pdo->lastInsertId()
         );
     }
 }
