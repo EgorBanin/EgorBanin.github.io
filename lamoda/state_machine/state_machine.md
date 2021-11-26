@@ -158,9 +158,9 @@ class paymentStateCancelled {}
 class paymentStatePaid {}
 
 Payment *-- paymentState
-paymentState <|-- paymentStateNew
-paymentState <|-- paymentStateCancelled
-paymentState <|-- paymentStatePaid
+paymentState <|.. paymentStateNew
+paymentState <|.. paymentStateCancelled
+paymentState <|.. paymentStatePaid
 ```
 </div>
 
