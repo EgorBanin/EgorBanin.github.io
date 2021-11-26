@@ -27,8 +27,9 @@
 Конечный автомат -- это абстракция, удобный способ представить себе работу сервиса в некоторых случаях, например при проектировании. Но реализация этой абстракции в коде ничего не даёт. Код не становится чище, а поведение не становится прозрачнее. Дополнительная абстракция путает и провоцирует на написание плохого кода.
 
 OP курильщика:
+
 ![диаграмма последовательности OP](OP_seq_bad.png)
-<!--
+<div style="display: none;">
 ```
 participant PP
 box OP
@@ -47,10 +48,10 @@ stateMachine -> stateMachine: validate
 stateMachine -> model: SetState
 consumer -> repo: SavePayment
 ```
--->
+</div>
 
 ![диаграмма состояний OP](OP_state_bad.png)
-<!--
+<div style="display: none;">
 ```
 [*] --> new
 [*] --> ready_to_confirm
@@ -66,12 +67,12 @@ confirmed --> paid
 
 confirmed --> withdraw
 ```
--->
+</div>
 
 OP здорового человека:
-![диаграмма последовательности OP](OP_seq_good.png)
-<!--
 
+![диаграмма последовательности OP](OP_seq_good.png)
+<div style="display: none;">
 ```
 participant PP
 box OP
@@ -88,10 +89,10 @@ model -> model: validate
 model -> model: setState
 consumer -> repo: SavePayment
 ```
--->
+</div>
 
 ![диаграмма состояний OP](OP_state_good.png)
-<!--
+<div style="display: none;">
 ```
 [*] --> waitingNew: new
 waitingNew --> new
@@ -116,7 +117,7 @@ cancelled --> [*]
 paid --> [*]
 failed --> [*]
 ```
--->
+</div>
 
 При этом в шину мы транслируем не сам статус, а смену статуса:
 
