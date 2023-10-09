@@ -2,6 +2,10 @@
 
 ![alt Автоматизация](./testing.jpg)
 
+Очень странно делать в ручную то, что мы можем автоматизировать!
+Мы ж программисты!
+
+
 ## Мотивация
 
 ![alt Проблема](./problem.jpg)
@@ -27,4 +31,6 @@
 - только необходимые данные для фикстур
 
 
-https://stash.lamoda.ru/users/georgy.banin/repos/nsqa/browse
+[stash.lamoda.ru/users/georgy.banin/repos/nsqa](https://stash.lamoda.ru/users/georgy.banin/repos/nsqa/browse)
+
+![alt Репозиторий](./qr.png)
