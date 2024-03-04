@@ -152,7 +152,7 @@ RUN docker-php-ext-install pdo pdo_mysql
 date.timezone = Europe/Moscow
 ```
 
-Создайте папку `docker/mysql`, а в ней конфиг `MySite.cfg`:
+Создайте папку `docker/mysql`, а в ней конфиг `MySite.cnf`:
 
 ```
 [client]
@@ -165,8 +165,6 @@ default-character-set = utf8mb4
 init-connect='SET NAMES utf8mb4'
 collation_server=utf8mb4_unicode_ci
 character_set_server=utf8mb4
-skip-character-set-client-handshake
-default_authentication_plugin= mysql_native_password
 ```
 
 Теперь надо поменять `compose.yaml`:
@@ -194,7 +192,7 @@ services:
       MYSQL_PASSWORD: passw0rd
       MYSQL_RANDOM_ROOT_PASSWORD: true
     volumes:
-      - ./mysql/mySite.cfg:/etc/mysql/conf.d/mySite.cfg:ro
+      - ./mysql/mySite.cnf:/etc/mysql/conf.d/mySite.cnf:ro
       - ./mysql/data:/var/lib/mysql # файлы базы данных из контейнера пробросим в локальную папку mysql/data, чтобы не терять данные при перезапуске контейнера
 ```
 
@@ -256,7 +254,7 @@ server {
 │   ├── compose.yaml
 │   ├── mysql
 │   │   ├── data
-│   │   └── mySite.cfg
+│   │   └── mySite.cnf
 │   ├── nginx
 │   │   └── mySite.conf
 │   └── php
@@ -298,7 +296,7 @@ services:
         MYSQL_PASSWORD: passw0rd
         MYSQL_RANDOM_ROOT_PASSWORD: true
       volumes:
-        - ./mysql/mySite.cfg:/etc/mysql/conf.d/mySite.cfg:ro
+        - ./mysql/mySite.cnf:/etc/mysql/conf.d/mySite.cnf:ro
         - ./mysql/data:/var/lib/mysql
 ```
 
